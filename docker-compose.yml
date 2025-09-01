@@ -1,0 +1,22 @@
+# MCP 限价策略服务 Docker Compose 配置
+
+version: '3.8'
+
+services:
+    mcp-price-strategy:
+        build: .
+        container_name: mcp-price-strategy-server
+        restart: unless-stopped
+        environment:
+            - NODE_ENV=production
+            - API_BASE_URL=${API_BASE_URL:-http://localhost:3000}
+            - LOG_LEVEL=${LOG_LEVEL:-info}
+            - REQUEST_TIMEOUT=${REQUEST_TIMEOUT:-30000}
+        volumes:
+            - ./logs:/app/logs
+        networks:
+            - mcp-network
+
+networks:
+    mcp-network:
+        driver: bridge

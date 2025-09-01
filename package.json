@@ -1,0 +1,34 @@
+{
+  "name": "mcp-price-strategy-server",
+  "version": "1.0.0",
+  "description": "MCP服务 - 限价策略交易",
+  "type": "module",
+  "scripts": {
+    "start": "node mcp-price-strategy-server.js",
+    "dev": "nodemon mcp-price-strategy-server.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:simple": "node test/simple-test.js",
+    "test:manual": "node test/manual-test.js",
+    "test:diagnostic": "node test/diagnostic-test.js",
+    "test:detailed": "node test/detailed-diagnostic-test.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "axios": "^1.6.0",
+    "jest": "^30.1.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "trading",
+    "strategy",
+    "price",
+    "crypto"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
