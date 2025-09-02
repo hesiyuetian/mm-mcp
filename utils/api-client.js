@@ -1,101 +1,101 @@
 // API工具类
 
-import axios from 'axios'
-import config from '../config/index.js'
+import axios from 'axios';
+import config from '../config/index.js';
 
 class ApiClient {
     constructor() {
-        this.baseUrl = config.api.baseUrl
+        this.baseUrl = config.api.baseUrl;
         // this.baseUrl = 'https://api-ai.taoillium.ai'
-        this.timeout = config.api.timeout
-        this.retries = config.api.retries
-        this.token = null
+        this.timeout = config.api.timeout;
+        this.retries = config.api.retries;
+        this.token = null;
         // this.token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjMzg4NTNjYS1jNTg4LTQ2MGUtYWNkNS1kZTEwYWEyY2MzMTUiLCJyb2xlcyI6WyJhZG1pbiJdLCJpYXQiOjE3NTY3MDc4MTAsImV4cCI6MTc1Njc5NDIxMH0.s46PgZWcAmTZ1G-jspR51afE3Gv_r_l85QVAo8ffVBg'
     }
 
     // 设置认证token
     setToken(token) {
-        this.token = token
+        this.token = token;
     }
 
     // 获取请求头
     getHeaders() {
-        const headers = {}
+        const headers = {};
 
         if (this.token) {
-            headers['Authorization'] = `Bearer ${this.token}`
+            headers['Authorization'] = `Bearer ${this.token}`;
         }
 
-        return headers
+        return headers;
     }
 
     // 带重试的请求方法
     async request(method, url, data = null, params = null) {
-        let lastError
+        let lastError;
 
         for (let i = 0; i <= this.retries; i++) {
             try {
-                console.log('request info ==============', {
-                    method,
-                    url: `${this.baseUrl}${url}`,
-                    data,
-                    params,
-                    headers: this.getHeaders(),
-                    timeout: this.timeout
-                })
+                // console.log('request info ==============', {
+                //     method,
+                //     url: `${this.baseUrl}${url}`,
+                //     data,
+                //     params,
+                //     headers: this.getHeaders(),
+                //     timeout: this.timeout,
+                // });
                 const response = await axios({
                     method,
                     url: `${this.baseUrl}${url}`,
                     data,
                     params,
                     headers: this.getHeaders(),
-                    timeout: this.timeout
-                })
-                return response.data
+                    timeout: this.timeout,
+                });
+                return response.data;
             } catch (error) {
-                lastError = error
+                lastError = error;
 
                 // 如果是最后一次重试，直接抛出错误
                 if (i === this.retries) {
-                    throw error
+                    throw error;
                 }
 
                 // 等待一段时间后重试
-                await this.delay(1000 * (i + 1))
+                await this.delay(1000 * (i + 1));
             }
         }
 
-        throw lastError
+        throw lastError;
     }
 
     // 延迟函数
     delay(ms) {
-        return new Promise((resolve) => setTimeout(resolve, ms))
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     // 验证响应
     validateResponse(response) {
         if (!response) {
-            throw new Error('API响应为空')
+            throw new Error('API响应为空');
         }
 
-        return response
+        return response;
     }
 
     // 登录
     async login(email, password) {
         const response = await this.request('POST', '/auth/login', {
             email,
-            password
-        })
+            password,
+        });
 
-        return this.validateResponse(response)
+        return this.validateResponse(response);
     }
 
     // 获取项目列表
     async getProjects() {
-        const response = await this.request('GET', '/project/getProjects', null, {})
-        return this.validateResponse(response)
+        const response = await this.request('GET', '/project/getProjects', null, {});
+        return this.validateResponse(response);
     }
 
     // 获取Token列表
@@ -104,10 +104,10 @@ class ApiClient {
             projectId,
             page,
             limit,
-            status
-        })
+            status,
+        });
 
-        return this.validateResponse(response)
+        return this.validateResponse(response);
     }
 
     // 获取钱包列表
@@ -116,17 +116,18 @@ class ApiClient {
             projectId,
             tokenId,
             page,
-            limit
-        })
+            limit,
+        });
 
-        return this.validateResponse(response)
+        return this.validateResponse(response);
     }
 
     // 创建策略
     async createStrategy(strategyParams) {
-        const response = await this.request('POST', '/strategy/createStrategy', strategyParams)
+        // console.log('createStrategy strategyParams ==============', strategyParams);
+        const response = await this.request('POST', '/strategy/createStrategy', strategyParams);
 
-        return this.validateResponse(response)
+        return this.validateResponse(response);
     }
 
     // 获取策略列表
@@ -134,23 +135,23 @@ class ApiClient {
         const response = await this.request('GET', '/strategy/getStrategies', null, {
             projectId,
             page,
-            limit
-        })
+            limit,
+        });
 
-        return this.validateResponse(response)
+        return this.validateResponse(response);
     }
 
     // 删除策略
     async deleteStrategy(strategyId) {
         const response = await this.request('POST', '/strategy/deleteStrategy', {
-            strategyId
-        })
+            strategyId,
+        });
 
-        return this.validateResponse(response)
+        return this.validateResponse(response);
     }
 }
 
-export default ApiClient
+export default ApiClient;
 
 // curl 'http://127.0.0.1:3000/project/getProjects' \
 //   -H 'Accept: application/json, text/plain, */*' \

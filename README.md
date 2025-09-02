@@ -2,6 +2,32 @@
 
 这是一个基于 Model Context Protocol (MCP)的限价策略交易服务，实现了完整的策略下单流程。
 
+## 🚀 快速开始
+
+### 通过 npm 安装使用
+
+```bash
+# 直接运行（推荐）
+npx mcp-price-strategy-server@latest
+
+# 或者全局安装
+npm install -g mcp-price-strategy-server
+mcp-price-strategy-server
+```
+
+### 在 MCP 配置中使用
+
+```json
+{
+    "mcpServers": {
+        "price-strategy": {
+            "command": "npx mcp-price-strategy-server@latest",
+            "env": {}
+        }
+    }
+}
+```
+
 ## 功能特性
 
 该 MCP 服务提供以下工具：
@@ -44,8 +70,8 @@ npm start
 // 用户登录
 const loginResult = await mcp.callTool('login', {
     email: 'user@example.com',
-    password: 'password123'
-})
+    password: 'password123',
+});
 ```
 
 ### 2. 获取项目列表
@@ -54,8 +80,8 @@ const loginResult = await mcp.callTool('login', {
 // 获取项目列表
 const projectsResult = await mcp.callTool('getProjects', {
     page: 1,
-    limit: 100
-})
+    limit: 100,
+});
 ```
 
 ### 3. 获取 Token 列表
@@ -66,8 +92,8 @@ const tokensResult = await mcp.callTool('getTokens', {
     projectId: 'project-id-123',
     page: 1,
     limit: 100,
-    status: 'active'
-})
+    status: 'active',
+});
 ```
 
 ### 4. 获取钱包列表
@@ -77,8 +103,8 @@ const tokensResult = await mcp.callTool('getTokens', {
 const walletsResult = await mcp.callTool('getWallets', {
     projectId: 'project-id-123',
     tokenId: 'token-id-456',
-    limit: 100000
-})
+    limit: 100000,
+});
 ```
 
 ### 5. 创建限价策略
@@ -96,8 +122,8 @@ const strategyResult = await mcp.callTool('createPriceStrategy', {
     minInterval: 1, // 最小交易间隔（秒）
     maxInterval: 2, // 最大交易间隔（秒）
     tipAmount: 0.001, // 小费金额（可选）
-    slippageBps: 100 // 滑点（基点，可选）
-})
+    slippageBps: 100, // 滑点（基点，可选）
+});
 ```
 
 ### 6. 获取策略列表
@@ -107,8 +133,8 @@ const strategyResult = await mcp.callTool('createPriceStrategy', {
 const strategiesResult = await mcp.callTool('getStrategies', {
     projectId: 'project-id-123',
     page: 1,
-    limit: 20
-})
+    limit: 20,
+});
 ```
 
 ### 7. 删除策略
@@ -116,8 +142,8 @@ const strategiesResult = await mcp.callTool('getStrategies', {
 ```javascript
 // 删除策略
 const deleteResult = await mcp.callTool('deleteStrategy', {
-    strategyId: 'strategy-id-789'
-})
+    strategyId: 'strategy-id-789',
+});
 ```
 
 ## 策略参数说明

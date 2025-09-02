@@ -1,4 +1,5 @@
 export default {
+    preset: 'default',
     testEnvironment: 'node',
     testMatch: ['**/test/**/*.test.js'],
     collectCoverageFrom: ['**/*.js', '!**/node_modules/**', '!**/test/**', '!**/examples/**'],
@@ -13,12 +14,12 @@ export default {
     restoreMocks: true,
     transform: {},
     moduleNameMapper: {
-        '^(\\.{1,2}/.*)\\.js$': '$1'
+        '^(\\.{1,2}/.*)\\.js$': '$1',
     },
     extensionsToTreatAsEsm: ['.js'],
     globals: {
         'ts-jest': {
-            useESM: true
-        }
-    }
-}
+            useESM: true,
+        },
+    },
+};

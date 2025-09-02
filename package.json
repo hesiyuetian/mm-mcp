@@ -1,8 +1,12 @@
 {
   "name": "mcp-price-strategy-server",
-  "version": "1.0.0",
+  "version": "1.0.12",
   "description": "MCP服务 - 限价策略交易",
   "type": "module",
+  "main": "mcp-price-strategy-server.js",
+  "bin": {
+    "mcp-price-strategy": "./mcp-price-strategy-server.js"
+  },
   "scripts": {
     "start": "node mcp-price-strategy-server.js",
     "dev": "nodemon mcp-price-strategy-server.js",
@@ -14,6 +18,22 @@
     "test:diagnostic": "node test/diagnostic-test.js",
     "test:detailed": "node test/detailed-diagnostic-test.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hesiyuetian/mm-mcp.git"
+  },
+  "homepage": "https://github.com/hesiyuetian/mm-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/hesiyuetian/mm-mcp/issues"
+  },
+  "files": [
+    "mcp-price-strategy-server.js",
+    "utils/",
+    "config/",
+    "examples/",
+    "README.md",
+    "LICENSE"
+  ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.4.0",
     "axios": "^1.6.0",
@@ -24,11 +44,17 @@
   },
   "keywords": [
     "mcp",
+    "model-context-protocol",
     "trading",
     "strategy",
     "price",
-    "crypto"
+    "crypto",
+    "trading-bot",
+    "automated-trading"
   ],
-  "author": "Your Name",
-  "license": "MIT"
+  "author": "hesiyuetian",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }
