@@ -47,8 +47,8 @@ class PriceStrategyMCPServer extends Server {
         });
 
         this.apiClient = new ApiClient();
-        this.token = null;
-        this.userInfo = null;
+        this.token = config.api.token;
+        // this.userInfo = null;
         this.tools = new Map();
 
         Logger.info('MCP服务器初始化开始');
@@ -61,78 +61,78 @@ class PriceStrategyMCPServer extends Server {
         Logger.info('开始注册工具');
 
         // 注册登录工具
-        this.tools.set('login', {
-            description: '用户账户登录',
-            inputSchema: {
-                type: 'object',
-                properties: {
-                    email: {
-                        type: 'string',
-                        description: '用户邮箱',
-                    },
-                    password: {
-                        type: 'string',
-                        description: '用户密码',
-                    },
-                },
-                required: ['email', 'password'],
-            },
-            handler: async args => {
-                Logger.info('收到登录请求', { args });
-                try {
-                    Logger.debug('验证登录参数', args);
-                    Validator.validateLoginParams(args);
+        // this.tools.set('login', {
+        //     description: '用户账户登录',
+        //     inputSchema: {
+        //         type: 'object',
+        //         properties: {
+        //             email: {
+        //                 type: 'string',
+        //                 description: '用户邮箱',
+        //             },
+        //             password: {
+        //                 type: 'string',
+        //                 description: '用户密码',
+        //             },
+        //         },
+        //         required: ['email', 'password'],
+        //     },
+        //     handler: async args => {
+        //         Logger.info('收到登录请求', { args });
+        //         try {
+        //             Logger.debug('验证登录参数', args);
+        //             Validator.validateLoginParams(args);
 
-                    Logger.info('调用API登录', { email: args.email });
-                    const response = await this.apiClient.login(args.email, args.password);
-                    Logger.debug('API登录响应', response);
+        //             Logger.info('调用API登录', { email: args.email });
+        //             const response = await this.apiClient.login(args.email, args.password);
+        //             Logger.debug('API登录响应', response);
 
-                    if (response.accessToken) {
-                        this.token = response.accessToken;
-                        this.userInfo = response.user;
-                        this.apiClient.setToken(response.accessToken);
-                        Logger.info('登录成功', { user: response.user });
+        //             if (response.accessToken) {
+        //                 this.token = response.accessToken;
+        //                 this.userInfo = response.user;
+        //                 this.apiClient.setToken(response.accessToken);
+        //                 Logger.info('登录成功', { user: response.user });
 
-                        return {
-                            content: [
-                                {
-                                    type: 'text',
-                                    text: config.messages.login.success,
-                                },
-                                {
-                                    type: 'text',
-                                    text: `用户: ${JSON.stringify(response.user)}`,
-                                },
-                            ],
-                        };
-                    } else {
-                        Logger.warn('登录失败', { message: response.message });
-                        return {
-                            content: [
-                                {
-                                    type: 'text',
-                                    text: response.message || config.messages.login.failed,
-                                },
-                            ],
-                        };
-                    }
-                } catch (error) {
-                    Logger.error('登录异常', { error: error.message, stack: error.stack });
-                    return {
-                        content: [
-                            {
-                                type: 'text',
-                                text: error.message || config.messages.login.failed,
-                            },
-                        ],
-                    };
-                }
-            },
-        });
+        //                 return {
+        //                     content: [
+        //                         {
+        //                             type: 'text',
+        //                             text: config.messages.login.success,
+        //                         },
+        //                         {
+        //                             type: 'text',
+        //                             text: `用户: ${JSON.stringify(response.user)}`,
+        //                         },
+        //                     ],
+        //                 };
+        //             } else {
+        //                 Logger.warn('登录失败', { message: response.message });
+        //                 return {
+        //                     content: [
+        //                         {
+        //                             type: 'text',
+        //                             text: response.message || config.messages.login.failed,
+        //                         },
+        //                     ],
+        //                 };
+        //             }
+        //         } catch (error) {
+        //             Logger.error('登录异常', { error: error.message, stack: error.stack });
+        //             return {
+        //                 content: [
+        //                     {
+        //                         type: 'text',
+        //                         text: error.message || config.messages.login.failed,
+        //                     },
+        //                 ],
+        //             };
+        //         }
+        //     },
+        // });
 
         // 注册获取项目列表工具
         this.tools.set('getProjects', {
-            description: '获取用户的项目列表',
+            description: `获取用户的项目列表,只需要返回项目名称, 然后提示用户选择一个项目,再获取Token列表; 如果没有项目列表,则提示用户需要再MM管理后台(https://onchain.wired.fund)先创建一个项目;`,
             inputSchema: {
                 type: 'object',
                 properties: {},
@@ -185,7 +185,10 @@ class PriceStrategyMCPServer extends Server {
 
         // 注册获取Token列表工具
         this.tools.set('getTokens', {
-            description: '获取指定项目里的Token列表',
+            description: `
+            获取指定项目里的Token列表,只需要返回地址、名称、和符号 (注意:不要返回其他信息), 然后提示用户选择一个Token,再提示获取钱包列表, 然后选择一个钱包,再提示创建策略;
+            如果没有项目ID, 则提示用户先获取项目列表, 需要把项目列表返回给用户,只需要返回项目名称, 然后提示用户选择一个项目,再获取Token列表; 
+            `,
             inputSchema: {
                 type: 'object',
                 properties: {
@@ -257,7 +260,10 @@ class PriceStrategyMCPServer extends Server {
 
         // 注册获取钱包列表工具
         this.tools.set('getWallets', {
-            description: '获取指定Token的钱包列表',
+            description: `
+            获取指定Token的钱包列表,只需要返回钱包地址、SOL余额、当前Token的余额、别名(name)和对应的钱包组 (钱包组为 列表里的type和tag字段,拼接方式: type-tag), 然后提示用户选择一个或者多个钱包来创建策略,再提示创建策略; 
+            提示用户如果交易方向为买入, 则需要购买的钱包地址有SOL余额, 如果交易方向为卖出, 则需要卖出的钱包地址有当前Token余额和少量的SOl来做gas费用;
+            如果没有Token ID, 则提示用户先获取Token列表`,
             inputSchema: {
                 type: 'object',
                 properties: {
@@ -332,7 +338,13 @@ class PriceStrategyMCPServer extends Server {
 
         // 注册创建策略工具
         this.tools.set('createPriceStrategy', {
-            description: '创建限价策略订单',
+            description: `
+            创建限价策略订单, 如果交易方向为买入, 则需要购买的钱包地址有SOL余额, 并且数量大于0, 如果交易方向为卖出, 则需要卖出的钱包地址有Token余额和少量的SOl来做gas费用, 并且数量大于0;
+            交易类型,不需要用户输入, 也不需要告诉用户交易类型, 根据Token列表里的poolType字段来判断, 如果poolType为pump, 则交易类型为inside, 如果poolType为pool, 则交易类型为outside;
+            如果没有钱包ID,则提示用户先获取钱包列表;
+            如果没有Token ID,则提示用户先获取Token列表;
+            如果没有项目ID,则提示用户先获取项目列表;
+            `,
             inputSchema: {
                 type: 'object',
                 properties: {
@@ -348,7 +360,7 @@ class PriceStrategyMCPServer extends Server {
                     },
                     targetPrice: {
                         type: 'number',
-                        description: '目标价格',
+                        description: '目标价格(单位: SOL)',
                     },
                     walletIds: {
                         type: 'array',
@@ -359,7 +371,7 @@ class PriceStrategyMCPServer extends Server {
                     },
                     fixedAmount: {
                         type: 'number',
-                        description: '下单价值(单位: SOL)',
+                        description: '下单金额(单位: SOL, 注意:是每个钱包地址的挂单价值)',
                     },
                     tradingType: {
                         type: 'string',
@@ -379,12 +391,12 @@ class PriceStrategyMCPServer extends Server {
                     },
                     tipAmount: {
                         type: 'number',
-                        description: '小费金额',
+                        description: '小费金额(单位: SOL)',
                         default: 0.0001,
                     },
                     slippageBps: {
                         type: 'number',
-                        description: '滑点（基点）',
+                        description: '滑点(单位: %)',
                         default: 5,
                     },
                 },

@@ -9,7 +9,7 @@ class ApiClient {
         // this.baseUrl = 'https://api-ai.taoillium.ai'
         this.timeout = config.api.timeout;
         this.retries = config.api.retries;
-        this.token = null;
+        this.token = config.api.token;
         // this.token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjMzg4NTNjYS1jNTg4LTQ2MGUtYWNkNS1kZTEwYWEyY2MzMTUiLCJyb2xlcyI6WyJhZG1pbiJdLCJpYXQiOjE3NTY3MDc4MTAsImV4cCI6MTc1Njc5NDIxMH0.s46PgZWcAmTZ1G-jspR51afE3Gv_r_l85QVAo8ffVBg'
     }
 
