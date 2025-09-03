@@ -32,13 +32,10 @@ mcp-price-strategy-server
 
 该 MCP 服务提供以下工具：
 
-1. **账户登录** (`login`) - 用户身份验证
-2. **获取项目列表** (`getProjects`) - 获取用户的项目列表
-3. **获取 Token 列表** (`getTokens`) - 根据项目 ID 获取 Token 列表
-4. **获取钱包列表** (`getWallets`) - 根据 TokenId 获取可用钱包
-5. **创建限价策略** (`createPriceStrategy`) - 限价策略下单
-6. **获取策略列表** (`getStrategies`) - 查看已创建的策略
-7. **删除策略** (`deleteStrategy`) - 删除指定策略
+1. **获取项目列表** (`getProjects`) - 获取用户的项目列表
+2. **获取 Token 列表** (`getTokens`) - 根据项目 ID 获取 Token 列表
+3. **获取钱包列表** (`getWallets`) - 根据 TokenId 获取可用钱包
+4. **创建限价策略** (`createPriceStrategy`) - 限价策略下单
 
 ## 安装和运行
 
@@ -54,6 +51,7 @@ npm install
 
 ```env
 API_BASE_URL=http://your-api-server.com
+TOKEN=
 ```
 
 ### 3. 运行服务
@@ -64,17 +62,7 @@ npm start
 
 ## 使用示例
 
-### 1. 账户登录
-
-```javascript
-// 用户登录
-const loginResult = await mcp.callTool('login', {
-    email: 'user@example.com',
-    password: 'password123',
-});
-```
-
-### 2. 获取项目列表
+### 1. 获取项目列表
 
 ```javascript
 // 获取项目列表
@@ -84,7 +72,7 @@ const projectsResult = await mcp.callTool('getProjects', {
 });
 ```
 
-### 3. 获取 Token 列表
+### 2. 获取 Token 列表
 
 ```javascript
 // 根据项目ID获取Token列表
@@ -96,7 +84,7 @@ const tokensResult = await mcp.callTool('getTokens', {
 });
 ```
 
-### 4. 获取钱包列表
+### 3. 获取钱包列表
 
 ```javascript
 // 根据TokenId获取可用钱包
@@ -107,7 +95,7 @@ const walletsResult = await mcp.callTool('getWallets', {
 });
 ```
 
-### 5. 创建限价策略
+### 4. 创建限价策略
 
 ```javascript
 // 创建限价策略订单
@@ -123,26 +111,6 @@ const strategyResult = await mcp.callTool('createPriceStrategy', {
     maxInterval: 2, // 最大交易间隔（秒）
     tipAmount: 0.001, // 小费金额（可选）
     slippageBps: 100, // 滑点（基点，可选）
-});
-```
-
-### 6. 获取策略列表
-
-```javascript
-// 获取策略列表
-const strategiesResult = await mcp.callTool('getStrategies', {
-    projectId: 'project-id-123',
-    page: 1,
-    limit: 20,
-});
-```
-
-### 7. 删除策略
-
-```javascript
-// 删除策略
-const deleteResult = await mcp.callTool('deleteStrategy', {
-    strategyId: 'strategy-id-789',
 });
 ```
 

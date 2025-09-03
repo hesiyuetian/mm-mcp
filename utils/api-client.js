@@ -124,7 +124,6 @@ class ApiClient {
 
     // 创建策略
     async createStrategy(strategyParams) {
-        // console.log('createStrategy strategyParams ==============', strategyParams);
         const response = await this.request('POST', '/strategy/createStrategy', strategyParams);
 
         return this.validateResponse(response);
