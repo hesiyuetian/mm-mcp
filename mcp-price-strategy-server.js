@@ -261,8 +261,9 @@ class PriceStrategyMCPServer extends Server {
         // 注册获取钱包列表工具
         this.tools.set('getWallets', {
             description: `
+            用户要先选择交易方向,买入或者卖出;
             获取指定Token的钱包列表,只需要返回钱包地址、SOL余额、当前Token的余额、别名(name)和对应的钱包组 (钱包组为 列表里的type和tag字段,拼接方式: type-tag), 然后提示用户选择一个或者多个钱包来创建策略,再提示创建策略; 
-            提示用户如果交易方向为买入, 则需要购买的钱包地址有SOL余额, 如果交易方向为卖出, 则需要卖出的钱包地址有当前Token余额和少量的SOl来做gas费用;
+            提示用户如果交易方向为买入, 则需要购买的钱包地址有SOL余额, 如果交易方向为卖出, 则需要卖出的钱包地址有当前Token余额和SOl余额;
             如果没有Token ID, 则提示用户先获取Token列表`,
             inputSchema: {
                 type: 'object',
@@ -274,6 +275,11 @@ class PriceStrategyMCPServer extends Server {
                     tokenId: {
                         type: 'string',
                         description: 'Token ID',
+                    },
+                    side: {
+                        type: 'string',
+                        description: '交易方向',
+                        enum: ['buy', 'sell'],
                     },
                     page: {
                         type: 'number',
@@ -302,6 +308,16 @@ class PriceStrategyMCPServer extends Server {
                             ],
                         };
                     }
+                    if (!args.side) {
+                        return {
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: '请先选择交易方向',
+                                },
+                            ],
+                        };
+                    }
 
                     Logger.debug('验证分页参数', args);
                     Validator.validatePaginationParams(args);
@@ -309,7 +325,8 @@ class PriceStrategyMCPServer extends Server {
                     const response = await this.apiClient.getWallets(args.projectId, args.tokenId, args.page, args.limit);
                     Logger.debug('API钱包列表响应', response);
 
-                    const wallets = (response.items || []).filter(item => Number(item.balance) > 0 || Number(item.tokenBalance) > 0);
+                    // const wallets = (response.items || []).filter(item => Number(item.balance) > 0 || Number(item.tokenBalance) > 0);
+                    const wallets = (response.items || []).filter(item => (args.side === 'buy' ? Number(item.balance) > 0 : Number(item.balance) > 0 && Number(item.tokenBalance) > 0));
                     return {
                         content: [
                             {
@@ -336,10 +353,12 @@ class PriceStrategyMCPServer extends Server {
             },
         });
 
+        // 如果交易方向为买入, 则需要购买的钱包地址有SOL余额, 并且数量大于0, 如果交易方向为卖出, 则需要卖出的钱包地址有Token余额和少量的SOl来做gas费用, 并且数量大于0;
         // 注册创建策略工具
         this.tools.set('createPriceStrategy', {
             description: `
-            创建限价策略订单, 如果交易方向为买入, 则需要购买的钱包地址有SOL余额, 并且数量大于0, 如果交易方向为卖出, 则需要卖出的钱包地址有Token余额和少量的SOl来做gas费用, 并且数量大于0;
+            创建限价策略订单,
+            交易方向,不需要用户输入, 从获取钱包列表的参数里获取;
             交易类型,不需要用户输入, 也不需要告诉用户交易类型, 根据Token列表里的poolType字段来判断, 如果poolType为pump, 则交易类型为inside, 如果poolType为pool, 则交易类型为outside;
             如果没有钱包ID,则提示用户先获取钱包列表;
             如果没有Token ID,则提示用户先获取Token列表;
@@ -369,9 +388,31 @@ class PriceStrategyMCPServer extends Server {
                         },
                         description: '钱包ID列表',
                     },
-                    fixedAmount: {
+                    amountType: {
+                        type: 'string',
+                        description: '数量类型, fixed: 固定数量SOL, range: 余额比例(1-100%), random: 随机数量SOL; 需要先让用户选择数量类型',
+                        enum: ['fixed', 'range', 'random'],
+                        default: 'fixed',
+                    },
+                    amount: {
                         type: 'number',
-                        description: '下单金额(单位: SOL, 注意:是每个钱包地址的挂单价值)',
+                        description: '下单金额(单位: SOL, 注意: 是每个钱包地址的挂单金额, 如果数量类型为fixed, 则必须要输入;需要先让用户选择数量类型)',
+                    },
+                    minRatio: {
+                        type: 'number',
+                        description: '范围比例最小值(单位: %, 如果数量类型为range, 则需要输入范围比例最小值和最大值;需要先让用户选择数量类型)',
+                    },
+                    maxRatio: {
+                        type: 'number',
+                        description: '范围比例最大值(单位: %, 如果数量类型为range, 则需要输入范围比例最小值和最大值;需要先让用户选择数量类型)',
+                    },
+                    minAmount: {
+                        type: 'number',
+                        description: '随机数量最小值(单位: SOL, 如果数量类型为random, 则需要输入随机数量最小值和最大值;需要先让用户选择数量类型)',
+                    },
+                    maxAmount: {
+                        type: 'number',
+                        description: '随机数量最大值(单位: SOL, 如果数量类型为random, 则需要输入随机数量最小值和最大值;需要先让用户选择数量类型)',
                     },
                     tradingType: {
                         type: 'string',
@@ -400,7 +441,7 @@ class PriceStrategyMCPServer extends Server {
                         default: 5,
                     },
                 },
-                required: ['tokenId', 'targetPrice', 'walletIds', 'tradingType', 'fixedAmount'],
+                required: ['tokenId', 'targetPrice', 'walletIds', 'tradingType'],
             },
             handler: async args => {
                 try {
@@ -420,7 +461,6 @@ class PriceStrategyMCPServer extends Server {
                     // 验证策略参数
                     const validationArgs = {
                         ...args,
-                        amount: args.fixedAmount, // 将 fixedAmount 映射到 amount 用于验证
                     };
                     Validator.validateStrategyParams(validationArgs);
 
@@ -429,12 +469,21 @@ class PriceStrategyMCPServer extends Server {
                         tradingType: args.tradingType || 'inside',
                         targetPrice: args.targetPrice,
                         priceThresholdPercent: args.priceThresholdPercent || 0,
-                        amount: args.fixedAmount,
                         token: args.tokenId,
                         walletIds: args.walletIds,
                         minInterval: (args.minInterval || config.strategy.defaultInterval.min) * 1000,
                         maxInterval: (args.maxInterval || config.strategy.defaultInterval.max) * 1000,
                     };
+
+                    if (args.amountType === 'fixed') {
+                        tradingParams.amount = args.amount;
+                    } else if (args.amountType === 'range') {
+                        tradingParams.minRatio = args.minRatio;
+                        tradingParams.maxRatio = args.maxRatio;
+                    } else if (args.amountType === 'random') {
+                        tradingParams.minAmount = args.minAmount;
+                        tradingParams.maxAmount = args.maxAmount;
+                    }
 
                     if (args.tipAmount) {
                         tradingParams.tipAmount = args.tipAmount;
