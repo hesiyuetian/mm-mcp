@@ -1,6 +1,6 @@
 {
   "name": "mcp-price-strategy-server",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "MCP服务 - 限价策略交易",
   "type": "module",
   "main": "mcp-price-strategy-server.js",
