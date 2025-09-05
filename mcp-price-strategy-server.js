@@ -70,8 +70,6 @@ class StrategyMCPServer extends Server {
         this.registerTools();
         this.registerHandlers();
         Logger.info('MCP服务器初始化完成');
-
-        console.log('config ==============', config.api);
     }
 
     registerTools() {
@@ -280,7 +278,9 @@ class StrategyMCPServer extends Server {
             description: `
             用户必须先选要执行的择策略类型: 限价策略(PRICE_BASED)、定时策略(TIME_BASED)、拉砸策略(MARKET_MANIPULATION)、拆分策略(PORTFOLIO_EXCHANGE)、刷量策略(BUNDLE_SWAP);
 
-            交易方向:
+            在执行获取钱包列表工具的操作时候,必须要先根据选择的策略类型,判断需要用户的交易方向,先选择交易方向,再返回钱包列表;
+
+            不同策略对应的交易方向判断规则:
             1:限价策略(PRICE_BASED)、定时策略(TIME_BASED),则必须要先引导用户选择交易方向,buy或者sell, 先选择交易方向,再返回钱包列表;
             2:拉砸策略(MARKET_MANIPULATION),则必须要先引导用户选择交易方向,拉升或者砸盘, (拉升为buy, 砸盘为sell), 先选择交易方向,再返回钱包列表;
             3:其他策略不需要选择交易方向,也不需要提示给用户, 都设置为sell;
@@ -386,7 +386,6 @@ class StrategyMCPServer extends Server {
             },
         });
 
-        // 如果交易方向为买入, 则需要购买的钱包地址有SOL余额, 并且数量大于0, 如果交易方向为卖出, 则需要卖出的钱包地址有Token余额和少量的SOl来做gas费用, 并且数量大于0;
         // 注册限价策略
         this.tools.set('createPriceStrategy', {
             description: `
