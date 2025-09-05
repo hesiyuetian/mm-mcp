@@ -125,8 +125,8 @@ class Validator {
         return true;
     }
 
-    // 验证策略参数
-    static validateStrategyParams(params) {
+    // 验证限价策略参数
+    static validatePriceStrategyParams(params) {
         // 验证必需参数
         this.validateTokenId(params.tokenId);
         this.validateSide(params.side);
@@ -151,6 +151,125 @@ class Validator {
             if (params.minAmount >= params.maxAmount) {
                 throw new Error('最小数量必须小于最大数量');
             }
+        }
+
+        // 验证交易间隔
+        if (params.minInterval !== undefined) {
+            this.validateInterval(params.minInterval);
+        }
+        if (params.maxInterval !== undefined) {
+            this.validateInterval(params.maxInterval);
+        }
+        if (params.minInterval !== undefined && params.maxInterval !== undefined) {
+            if (params.minInterval >= params.maxInterval) {
+                throw new Error('最小交易间隔必须小于最大交易间隔');
+            }
+        }
+
+        // 验证可选参数
+        if (params.tipAmount !== undefined) {
+            this.validateAmount(params.tipAmount);
+        }
+
+        if (params.slippageBps !== undefined) {
+            const slippage = parseFloat(params.slippageBps);
+            if (isNaN(slippage) || slippage < 0 || slippage > 10000) {
+                throw new Error('滑点必须在0-10000基点之间');
+            }
+        }
+
+        if (params.priceThresholdPercent !== undefined) {
+            const threshold = parseFloat(params.priceThresholdPercent);
+            if (isNaN(threshold) || threshold < 0 || threshold > 100) {
+                throw new Error('价格阈值百分比必须在0-100之间');
+            }
+        }
+
+        return true;
+    }
+
+    // 验证定时策略参数
+    static validateTimeStrategyParams(params) {
+        // 验证必需参数
+        this.validateTokenId(params.tokenId);
+        this.validateSide(params.side);
+        this.validateWalletIds(params.walletIds);
+        this.validateAmountType(params.amountType);
+
+        if (!params.executeAt || typeof params.executeAt !== 'string') {
+            throw new Error('策略执行时间不能为空');
+        }
+
+        // 验证数量相关参数
+        if (params.amountType === 'fixed') {
+            this.validateAmount(params.amount);
+        } else if (params.amountType === 'range') {
+            this.validateRatio(params.minRatio);
+            this.validateRatio(params.maxRatio);
+            if (params.minRatio >= params.maxRatio) {
+                throw new Error('最小比例必须小于最大比例');
+            }
+        } else if (params.amountType === 'random') {
+            this.validateAmount(params.minAmount);
+            this.validateAmount(params.maxAmount);
+            if (params.minAmount >= params.maxAmount) {
+                throw new Error('最小数量必须小于最大数量');
+            }
+        }
+
+        // 验证交易间隔
+        if (params.minInterval !== undefined) {
+            this.validateInterval(params.minInterval);
+        }
+        if (params.maxInterval !== undefined) {
+            this.validateInterval(params.maxInterval);
+        }
+        if (params.minInterval !== undefined && params.maxInterval !== undefined) {
+            if (params.minInterval >= params.maxInterval) {
+                throw new Error('最小交易间隔必须小于最大交易间隔');
+            }
+        }
+
+        // 验证可选参数
+        if (params.tipAmount !== undefined) {
+            this.validateAmount(params.tipAmount);
+        }
+
+        if (params.slippageBps !== undefined) {
+            const slippage = parseFloat(params.slippageBps);
+            if (isNaN(slippage) || slippage < 0 || slippage > 10000) {
+                throw new Error('滑点必须在0-10000基点之间');
+            }
+        }
+
+        if (params.priceThresholdPercent !== undefined) {
+            const threshold = parseFloat(params.priceThresholdPercent);
+            if (isNaN(threshold) || threshold < 0 || threshold > 100) {
+                throw new Error('价格阈值百分比必须在0-100之间');
+            }
+        }
+
+        return true;
+    }
+
+    // 验证刷量策略参数
+    static validateBundleSwapStrategyParams(params) {
+        // 验证必需参数
+        this.validateTokenId(params.tokenId);
+        if (!params.buyWalletId || typeof params.buyWalletId !== 'string') {
+            throw new Error('买入钱包不能为空');
+        }
+        if (!params.sellWalletId || typeof params.sellWalletId !== 'string') {
+            throw new Error('卖出钱包不能为空');
+        }
+
+        if (!params.maxCycles || typeof params.maxCycles !== 'number') throw new Error('最大循环次数不能为空');
+
+        // 验证数量相关参数
+        this.validateAmount(params.minTradeAmount);
+        this.validateAmount(params.maxTradeAmount);
+        if (params.minTradeAmount >= params.maxTradeAmount) {
+            throw new Error('最小交易金额必须小于最大交易金额');
         }
 
         // 验证交易间隔

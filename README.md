@@ -106,7 +106,7 @@ const strategyResult = await mcp.callTool('createPriceStrategy', {
     priceThresholdPercent: 0, // 价格阈值百分比
     walletIds: ['wallet-id-1', 'wallet-id-2'], // 钱包ID列表
     amountType: 'fixed', // 'fixed', 'range', 'random'
-    fixedAmount: 1.0, // 固定数量
+    amount: 1.0, // 固定数量
     minInterval: 1, // 最小交易间隔（秒）
     maxInterval: 2, // 最大交易间隔（秒）
     tipAmount: 0.001, // 小费金额（可选）
@@ -123,7 +123,7 @@ const strategyResult = await mcp.callTool('createPriceStrategy', {
 
 ### 数量类型 (amountType)
 
--   `fixed`: 固定数量 - 使用 `fixedAmount` 参数
+-   `fixed`: 固定数量 - 使用 `amount` 参数
 -   `range`: 范围比例 - 使用 `minRatio` 和 `maxRatio` 参数
 -   `random`: 随机数量 - 使用 `minAmount` 和 `maxAmount` 参数
 
@@ -152,7 +152,7 @@ const strategyResult = await mcp.callTool('createPriceStrategy', {
 
 ## 注意事项
 
-1. 使用前必须先调用 `login` 工具进行身份验证
+1. 使用前必须先设置 Token 进行身份验证
 2. 确保 API 服务器地址配置正确
 3. 钱包必须有足够的余额才能创建策略
 4. 策略创建后会自动开始监控和执行

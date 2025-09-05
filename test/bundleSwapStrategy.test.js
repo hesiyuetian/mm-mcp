@@ -130,81 +130,85 @@ async function runTests() {
         // }
 
         // 测试2: 获取项目列表
-        console.log('\n测试2: 获取项目列表');
-        let projectId = '';
-        try {
-            const result = await client.callTool('getProjects', {
-                // page: 1,
-                // limit: 10
-            });
-            console.log('项目列表结果:', result);
-            if (!result || result.length < 2 || !result.content[1].text) return;
-            const data = JSON.parse(result.content[1].text.replace('项目列表:', ''));
-            console.log('项目列表数据:', data);
-            if (data.length > 0) projectId = data[0].id;
-        } catch (error) {
-            console.log('获取项目列表测试失败:', error.message);
-        }
+        // console.log('\n测试2: 获取项目列表');
+        // let projectId = '';
+        // try {
+        //     const result = await client.callTool('getProjects', {
+        //         // page: 1,
+        //         // limit: 10
+        //     });
+        //     console.log('项目列表结果:', result);
+        //     if (!result || result.length < 2 || !result.content[1].text) return;
+        //     const data = JSON.parse(result.content[1].text.replace('项目列表:', ''));
+        //     console.log('项目列表数据:', data);
+        //     if (data.length > 0) projectId = data[0].id;
+        // } catch (error) {
+        //     console.log('获取项目列表测试失败:', error.message);
+        // }
 
-        if (!projectId) return;
+        // if (!projectId) return;
 
         // 测试3: 获取Token列表
-        console.log('\n测试3: 获取Token列表');
-        let tokenInfo = {};
-        try {
-            const result = await client.callTool('getTokens', {
-                projectId: projectId,
-                page: 1,
-                limit: 10000,
-            });
-            console.log('Token列表结果:', result);
+        // console.log('\n测试3: 获取Token列表');
+        // let tokenInfo = {};
+        // try {
+        //     const result = await client.callTool('getTokens', {
+        //         projectId: projectId,
+        //         page: 1,
+        //         limit: 10000,
+        //     });
+        //     console.log('Token列表结果:', result);
 
-            if (!result || result.length < 2 || !result.content[1].text) return;
-            const data = JSON.parse(result.content[1].text.replace('Token列表:', ''));
-            console.log('Token列表数据:', data);
-            if (data.length > 0) tokenInfo = data[0];
-        } catch (error) {
-            console.log('获取Token列表测试失败:', error.message);
-        }
+        //     if (!result || result.length < 2 || !result.content[1].text) return;
+        //     const data = JSON.parse(result.content[1].text.replace('Token列表:', ''));
+        //     console.log('Token列表数据:', data);
+        //     if (data.length > 0) tokenInfo = data[0];
+        // } catch (error) {
+        //     console.log('获取Token列表测试失败:', error.message);
+        // }
 
-        if (!tokenInfo.id) return;
+        // if (!tokenInfo.id) return;
 
-        let walletId = '';
+        // let walletId = '';
 
         // 测试4: 获取钱包列表
-        console.log('\n测试4: 获取钱包列表');
-        try {
-            const result = await client.callTool('getWallets', {
-                projectId: tokenInfo.projectId,
-                tokenId: tokenInfo.id,
-                page: 1,
-                limit: 10000,
-            });
-            console.log('钱包列表结果:', result);
+        // console.log('\n测试4: 获取钱包列表');
+        // try {
+        //     const result = await client.callTool('getWallets', {
+        //         projectId: tokenInfo.projectId,
+        //         tokenId: tokenInfo.id,
+        //         page: 1,
+        //         limit: 10000,
+        //     });
+        //     console.log('钱包列表结果:', result);
 
-            if (!result || result.length < 2 || !result.content[1].text) return;
-            const data = JSON.parse(result.content[1].text.replace('钱包列表:', ''));
-            console.log('钱包列表数据:', data);
-            if (data.length > 0) walletId = data[0].id;
-            // if (wallets.length > 0) walletId = wallets[0].id;
-        } catch (error) {
-            console.log('获取钱包列表测试失败:', error.message);
-        }
+        //     if (!result || result.length < 2 || !result.content[1].text) return;
+        //     const data = JSON.parse(result.content[1].text.replace('钱包列表:', ''));
+        //     console.log('钱包列表数据:', data);
+        //     if (data.length > 0) walletId = data[0].id;
+        //     // if (wallets.length > 0) walletId = wallets[0].id;
+        // } catch (error) {
+        //     console.log('获取钱包列表测试失败:', error.message);
+        // }
 
-        if (!walletId) return;
+        // if (!walletId) return;
 
         // 测试5: 创建限价策略
-        console.log('\n测试5: 创建限价策略');
+        console.log('\n测试5: 创建刷量策略');
         try {
-            const strategyResult = await client.callTool('createPriceStrategy', {
-                tokenId: tokenInfo.id,
-                side: 'buy',
-                targetPrice: 0.00001,
-                walletIds: [walletId],
-                fixedAmount: 0.01,
-                tradingType: tokenInfo.poolType === 'pump' ? 'inside' : 'outside',
-                minInterval: 1000,
-                maxInterval: 2000,
+            const strategyResult = await client.callTool('createBundleSwapStrategy', {
+                tokenId: 'fb7a3576-1f4c-457a-8828-ea6efdaf4883',
+                tradingType: 'outside',
+                buyWalletId: 'ef47a877-e84c-47e0-8b3b-1520c5bad876',
+                sellWalletId: 'b4d266dc-a844-4397-a145-caed5f4220ef',
+                maxCycles: 1,
+                minTradeAmount: 0.01,
+                maxTradeAmount: 0.03,
+                executeAt: '2025-09-10 12:00:00',
+                minInterval: 1,
+                maxInterval: 2,
+                tipAmount: 0.0001,
+                slippageBps: 5,
             });
             console.log('策略创建结果:', strategyResult);
         } catch (error) {
@@ -249,71 +253,3 @@ async function runTests() {
 }
 
 runTests().catch(console.error);
-
-// Jest测试套件
-// describe('MCP Price Strategy Server', () => {
-//     let client
-
-//     beforeAll(async () => {
-//         client = new MCPClient()
-//         await client.start()
-//     })
-
-//     afterAll(async () => {
-//         await client.stop()
-//     })
-
-//     test('服务器应该能够启动', () => {
-//         expect(client.process).toBeTruthy()
-//     })
-
-//     test('登录工具应该存在', async () => {
-//         try {
-//             const result = await client.callTool('login', {
-//                 email: 'test@example.com',
-//                 password: 'testpassword'
-//             })
-//             expect(result).toBeDefined()
-//         } catch (error) {
-//             // 预期错误，因为没有真实API
-//             expect(error.message).toContain('登录')
-//         }
-//     })
-
-//     test('获取项目列表工具应该存在', async () => {
-//         try {
-//             const result = await client.callTool('getProjects', {
-//                 page: 1,
-//                 limit: 10
-//             })
-//             expect(result).toBeDefined()
-//         } catch (error) {
-//             // 预期错误，因为没有真实API
-//             expect(error.message).toContain('项目')
-//         }
-//     })
-
-//     test('创建策略工具应该存在', async () => {
-//         try {
-//             const result = await client.callTool('createPriceStrategy', {
-//                 tokenId: 'test-token-id',
-//                 side: 'buy',
-//                 targetPrice: 0.5,
-//                 walletIds: ['wallet-1'],
-//                 amountType: 'fixed',
-//                 fixedAmount: 1.0
-//             })
-//             expect(result).toBeDefined()
-//         } catch (error) {
-//             // 预期错误，因为没有真实API
-//             expect(error.message).toContain('策略')
-//         }
-//     })
-// })
-
-// 运行测试
-// if (import.meta.url === `file://${process.argv[1]}`) {
-//     runTests().catch(console.error)
-// }
-
-// export { MCPClient, runTests }

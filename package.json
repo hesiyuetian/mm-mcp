@@ -37,6 +37,8 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.4.0",
     "axios": "^1.6.0",
+    "dayjs": "^1.11.18",
+    "dotenv": "^17.2.2",
     "jest": "^30.1.2"
   },
   "devDependencies": {

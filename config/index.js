@@ -1,11 +1,13 @@
 // MCP 限价策略服务配置文件
 
 const config = {
+    env: process.env.NODE_ENV,
+
     // 服务器配置
     server: {
         name: 'price-strategy-server',
         version: '1.0.0',
-        description: 'MCP服务 - 限价策略交易',
+        description: 'MCP服务 - 策略交易',
     },
 
     // API配置
@@ -54,8 +56,16 @@ const config = {
             insufficient: '钱包余额不足',
         },
         strategy: {
-            failed: '限价策略创建失败',
-            success: '限价策略创建成功',
+            bundleSwapFailed: '刷量策略创建失败',
+            bundleSwapSuccess: '刷量策略创建成功',
+            priceStrategyFailed: '限价策略创建失败',
+            priceStrategySuccess: '限价策略创建成功',
+            timeStrategyFailed: '定时策略创建失败',
+            timeStrategySuccess: '定时策略创建成功',
+            marketManipulationStrategyFailed: '拉砸策略创建失败',
+            marketManipulationStrategySuccess: '拉砸策略创建成功',
+            portfolioExchangeStrategyFailed: '拆分策略创建失败',
+            portfolioExchangeStrategySuccess: '拆分策略创建成功',
             deleteFailed: '策略删除失败',
             deleteSuccess: '策略删除成功',
         },
@@ -82,7 +92,7 @@ const config = {
         },
         interval: {
             min: 1,
-            max: 3600,
+            max: 36000,
             message: '交易间隔必须在1-3600秒之间',
         },
     },
