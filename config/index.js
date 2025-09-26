@@ -31,8 +31,7 @@ const config = {
             max: 2, // 秒
         },
         defaultTipAmount: 0.001,
-        defaultSlippageBps: 100,
-        maxWalletCount: 100000,
+        defaultSlippageBps: 5,
     },
 
     // 错误消息

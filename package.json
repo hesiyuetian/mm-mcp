@@ -1,5 +1,5 @@
 {
-  "name": "mcp-price-strategy-server",
+  "name": "mm-mcp-strategy-server",
   "version": "1.0.13",
   "description": "MCP服务 - 限价策略交易",
   "type": "module",
@@ -8,8 +8,8 @@
     "mcp-price-strategy": "./mcp-price-strategy-server.js"
   },
   "scripts": {
-    "start": "node mcp-price-strategy-server.js",
-    "dev": "nodemon mcp-price-strategy-server.js",
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -35,7 +35,7 @@
     "LICENSE"
   ],
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^0.4.0",
+    "@modelcontextprotocol/sdk": "^1.17.5",
     "axios": "^1.6.0",
     "dayjs": "^1.11.18",
     "dotenv": "^17.2.2",

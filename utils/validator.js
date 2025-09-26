@@ -173,8 +173,8 @@ class Validator {
 
         if (params.slippageBps !== undefined) {
             const slippage = parseFloat(params.slippageBps);
-            if (isNaN(slippage) || slippage < 0 || slippage > 10000) {
-                throw new Error('滑点必须在0-10000基点之间');
+            if (isNaN(slippage) || slippage < 0 || slippage > 100) {
+                throw new Error('滑点必须在0%-100%之间');
             }
         }
 
@@ -237,8 +237,8 @@ class Validator {
 
         if (params.slippageBps !== undefined) {
             const slippage = parseFloat(params.slippageBps);
-            if (isNaN(slippage) || slippage < 0 || slippage > 10000) {
-                throw new Error('滑点必须在0-10000基点之间');
+            if (isNaN(slippage) || slippage < 0 || slippage > 100) {
+                throw new Error('滑点必须在0%-100%之间');
             }
         }
 
@@ -250,6 +250,105 @@ class Validator {
         }
 
         return true;
+    }
+
+    // 验证拉砸策略参数
+    static validateMarketManipulationStrategyParams(params) {
+        // 验证必需参数
+        this.validateTokenId(params.tokenId);
+        this.validateSide(params.side);
+        this.validatePrice(params.targetPrice);
+        this.validateWalletIds(params.walletIds);
+        this.validateAmount(params.maxAmount);
+        if (params.maxAmount <= 0) {
+            throw new Error('交易总量必须大于0');
+        }
+
+        // 验证数量相关参数
+        this.validateAmount(params.minTradeAmount);
+        this.validateAmount(params.maxTradeAmount);
+        if (params.minTradeAmount >= params.maxTradeAmount) {
+            throw new Error('单笔最小交易量必须小于单笔最大交易量');
+        }
+
+        // 验证交易间隔
+        if (params.minInterval !== undefined) {
+            this.validateInterval(params.minInterval);
+        }
+        if (params.maxInterval !== undefined) {
+            this.validateInterval(params.maxInterval);
+        }
+        if (params.minInterval !== undefined && params.maxInterval !== undefined) {
+            if (params.minInterval >= params.maxInterval) {
+                throw new Error('最小交易间隔必须小于最大交易间隔');
+            }
+        }
+
+        // 验证可选参数
+        if (params.tipAmount !== undefined) {
+            this.validateAmount(params.tipAmount);
+        }
+
+        if (params.slippageBps !== undefined) {
+            const slippage = parseFloat(params.slippageBps);
+            if (isNaN(slippage) || slippage < 0 || slippage > 100) {
+                throw new Error('滑点必须在0%-100%之间');
+            }
+        }
+
+        if (params.priceThresholdPercent !== undefined) {
+            const threshold = parseFloat(params.priceThresholdPercent);
+            if (isNaN(threshold) || threshold < 0 || threshold > 100) {
+                throw new Error('价格阈值百分比必须在0-100之间');
+            }
+        }
+
+        return true;
+    }
+
+    // 验证拆分策略参数
+    static validatePortfolioExchangeStrategyParams(params) {
+        // 验证必需参数
+        this.validateTokenId(params.tokenId);
+
+        this.validateWalletIds(params.fromWalletIds);
+        this.validateWalletIds(params.toWalletIds);
+
+        if (params.fromWalletIds.some(id => params.toWalletIds.includes(id))) {
+            throw new Error('拆分地址和目标地址不能有交集');
+        }
+
+        this.validateAmount(params.fromSplitAmount);
+        this.validateAmount(params.fromAmountMinRatio);
+        this.validateAmount(params.fromAmountMaxRatio);
+
+        this.validateAmount(params.minTradeAmount);
+        this.validateAmount(params.maxTradeAmount);
+
+        // 验证交易间隔
+        if (params.minInterval !== undefined) {
+            this.validateInterval(params.minInterval);
+        }
+        if (params.maxInterval !== undefined) {
+            this.validateInterval(params.maxInterval);
+        }
+        if (params.minInterval !== undefined && params.maxInterval !== undefined) {
+            if (params.minInterval >= params.maxInterval) {
+                throw new Error('最小交易间隔必须小于最大交易间隔');
+            }
+        }
+
+        // 验证可选参数
+        if (params.tipAmount !== undefined) {
+            this.validateAmount(params.tipAmount);
+        }
+
+        if (params.slippageBps !== undefined) {
+            const slippage = parseFloat(params.slippageBps);
+            if (isNaN(slippage) || slippage < 0 || slippage > 100) {
+                throw new Error('滑点必须在0%-100%之间');
+            }
+        }
     }
 
     // 验证刷量策略参数
@@ -292,8 +391,8 @@ class Validator {
 
         if (params.slippageBps !== undefined) {
             const slippage = parseFloat(params.slippageBps);
-            if (isNaN(slippage) || slippage < 0 || slippage > 10000) {
-                throw new Error('滑点必须在0-10000基点之间');
+            if (isNaN(slippage) || slippage < 0 || slippage > 100) {
+                throw new Error('滑点必须在0%-100%之间');
             }
         }
 

@@ -4,9 +4,9 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import dayjs from 'dayjs';
-import ApiClient from './utils/api-client.js';
-import Validator from './utils/validator.js';
-import config from './config/index.js';
+import ApiClient from '../utils/api-client.js';
+import Validator from '../utils/validator.js';
+import config from '../config/index.js';
 
 import fs from 'fs';
 import path from 'path';
@@ -56,10 +56,40 @@ class Logger {
 
 class StrategyMCPServer extends Server {
     constructor() {
-        super({
-            name: config.server.name,
-            version: config.server.version,
-        });
+        super(
+            {
+                name: config.server.name,
+                version: config.server.version,
+                implementation: `该服务主要用于帮助用户管理加密货币交易策略，包括限价策略、定时策略、拉砸策略、拆分策略和刷量策略。请仔细理解用户的意图，并按以下指引选择合适的接口：
+        **原则：**
+        *   **优先理解意图**：判断用户的真实需求，是创建策略、查询项目、Token还是钱包信息。
+        *   **参数准确性**：确保传递给每个接口的参数格式和类型都正确，特别是价格、数量、时间格式等。
+        *   **必要时追问**：如果用户信息不足以调用接口，请向用户追问缺失的信息。
+        *   **清晰呈现结果**：将接口返回的信息以用户易于理解的方式进行呈现。
+        *   **策略类型选择**：根据用户需求选择合适的策略类型：
+            - 限价策略(PRICE_BASED)：当价格达到目标价格时执行交易
+            - 定时策略(TIME_BASED)：在指定时间执行交易
+            - 拉砸策略(MARKET_MANIPULATION)：拉升或砸盘操作
+            - 拆分策略(PORTFOLIO_EXCHANGE)：在不同钱包间转移资产
+            - 刷量策略(BUNDLE_SWAP)：在两个钱包间进行循环交易
+        *   **交易方向判断**：
+            - 限价策略、定时策略、拉砸策略需要用户选择交易方向(buy/sell)
+            - 拆分策略、刷量策略默认为sell方向
+        *   **钱包选择限制**：
+            - 限价、定时、拉砸策略：可选择多个钱包
+            - 拆分策略：需要选择拆分地址和目标地址，不能有交集 
+            - 刷量策略：只能选择一个买入钱包和一个卖出钱包，且不能相同 
+        请根据上述指引选择接口。
+        `,
+            },
+            {
+                capabilities: {
+                    tools: {
+                        listChanged: true,
+                    },
+                },
+            }
+        );
 
         this.apiClient = new ApiClient();
         this.token = config.api.token;
@@ -75,77 +105,6 @@ class StrategyMCPServer extends Server {
     registerTools() {
         Logger.info('开始注册工具');
 
-        // 注册登录工具
-        // this.tools.set('login', {
-        //     description: '用户账户登录',
-        //     inputSchema: {
-        //         type: 'object',
-        //         properties: {
-        //             email: {
-        //                 type: 'string',
-        //                 description: '用户邮箱',
-        //             },
-        //             password: {
-        //                 type: 'string',
-        //                 description: '用户密码',
-        //             },
-        //         },
-        //         required: ['email', 'password'],
-        //     },
-        //     handler: async args => {
-        //         Logger.info('收到登录请求', { args });
-        //         try {
-        //             Logger.debug('验证登录参数', args);
-        //             Validator.validateLoginParams(args);
-
-        //             Logger.info('调用API登录', { email: args.email });
-        //             const response = await this.apiClient.login(args.email, args.password);
-        //             Logger.debug('API登录响应', response);
-
-        //             if (response.accessToken) {
-        //                 this.token = response.accessToken;
-        //                 this.userInfo = response.user;
-        //                 this.apiClient.setToken(response.accessToken);
-        //                 Logger.info('登录成功', { user: response.user });
-
-        //                 return {
-        //                     content: [
-        //                         {
-        //                             type: 'text',
-        //                             text: config.messages.login.success,
-        //                         },
-        //                         {
-        //                             type: 'text',
-        //                             text: `用户: ${JSON.stringify(response.user)}`,
-        //                         },
-        //                     ],
-        //                 };
-        //             } else {
-        //                 Logger.warn('登录失败', { message: response.message });
-        //                 return {
-        //                     content: [
-        //                         {
-        //                             type: 'text',
-        //                             text: response.message || config.messages.login.failed,
-        //                         },
-        //                     ],
-        //                 };
-        //             }
-        //         } catch (error) {
-        //             Logger.error('登录异常', { error: error.message, stack: error.stack });
-        //             return {
-        //                 content: [
-        //                     {
-        //                         type: 'text',
-        //                         text: error.message || config.messages.login.failed,
-        //                     },
-        //                 ],
-        //             };
-        //         }
-        //     },
-        // });
-
-        // 注册获取项目列表工具
         this.tools.set('getProjects', {
             description: `获取用户的项目列表,只需要返回项目名称, 然后提示用户选择一个项目,再获取Token列表; 如果没有项目列表,则提示用户需要再MM管理后台(https://onchain.wired.fund)先创建一个项目;`,
             inputSchema: {
@@ -450,7 +409,7 @@ class StrategyMCPServer extends Server {
                         type: 'string',
                         description: '交易类型',
                         enum: ['inside', 'outside'],
-                        default: 'outside',
+                        // default: 'outside',
                     },
                     minInterval: {
                         type: 'number',
@@ -465,7 +424,7 @@ class StrategyMCPServer extends Server {
                     tipAmount: {
                         type: 'number',
                         description: '小费金额(单位: SOL)',
-                        default: 0.0001,
+                        default: config.strategy.defaultTipAmount,
                     },
                     slippageBps: {
                         type: 'number',
@@ -516,9 +475,7 @@ class StrategyMCPServer extends Server {
                         tradingParams.maxAmount = args.maxAmount;
                     }
 
-                    if (args.tipAmount) {
-                        tradingParams.tipAmount = args.tipAmount;
-                    }
+                    tradingParams.tipAmount = args.tipAmount || config.strategy.defaultTipAmount;
 
                     if (tradingParams.tradingType === 'outside' && args.slippageBps) {
                         tradingParams.slippageBps = args.slippageBps;
@@ -649,12 +606,12 @@ class StrategyMCPServer extends Server {
                     tipAmount: {
                         type: 'number',
                         description: '小费金额(单位: SOL)',
-                        default: 0.0001,
+                        default: config.strategy.defaultTipAmount,
                     },
                     slippageBps: {
                         type: 'number',
                         description: '滑点(单位: %)',
-                        default: 5,
+                        default: config.strategy.defaultSlippageBps,
                     },
                 },
                 required: ['tokenId', 'executeAt', 'walletIds', 'tradingType', 'side'],
@@ -683,7 +640,7 @@ class StrategyMCPServer extends Server {
                     const tradingParams = {
                         side: args.side,
                         tradingType: args.tradingType,
-                        executeAt: dayjs(values.executeAt).toISOString(),
+                        executeAt: dayjs(args.executeAt).toISOString(),
                         walletIds: args.walletIds,
                         minInterval: (args.minInterval || config.strategy.defaultInterval.min) * 1000,
                         maxInterval: (args.maxInterval || config.strategy.defaultInterval.max) * 1000,
@@ -699,9 +656,7 @@ class StrategyMCPServer extends Server {
                         tradingParams.maxAmount = args.maxAmount;
                     }
 
-                    if (args.tipAmount) {
-                        tradingParams.tipAmount = args.tipAmount;
-                    }
+                    tradingParams.tipAmount = args.tipAmount || config.strategy.defaultTipAmount;
 
                     if (tradingParams.tradingType === 'outside' && args.slippageBps) {
                         tradingParams.slippageBps = args.slippageBps;
@@ -757,7 +712,6 @@ class StrategyMCPServer extends Server {
             description: `
             创建拉砸策略订单,
             交易方向,不需要用户输入, 从获取钱包列表的参数里获取;
-            策略执行时间,必须要大于当前时间+3分钟, 格式为: 2025-01-01 12:00:00;
             交易类型,不需要用户输入, 也不需要告诉用户交易类型, 根据Token列表里的poolType字段来判断, 如果poolType为pump, 则交易类型为inside, 如果poolType为pool, 则交易类型为outside;
             如果没有钱包ID,则提示用户先获取钱包列表;
             如果没有Token ID,则提示用户先获取Token列表;
@@ -774,11 +728,6 @@ class StrategyMCPServer extends Server {
                         type: 'string',
                         description: '交易方向',
                         enum: ['buy', 'sell'],
-                        // default: 'buy',
-                    },
-                    executeAt: {
-                        type: 'string',
-                        description: '策略执行时间(格式: 2025-01-01 12:00:00)',
                     },
                     walletIds: {
                         type: 'array',
@@ -787,37 +736,26 @@ class StrategyMCPServer extends Server {
                         },
                         description: '钱包ID列表',
                     },
-                    amountType: {
-                        type: 'string',
-                        description: '数量类型, fixed: 固定数量, range: 余额比例(1-100%), random: 随机数量; 需要先让用户选择数量类型',
-                        enum: ['fixed', 'range', 'random'],
-                        default: 'fixed',
-                    },
-                    amount: {
+                    targetPrice: {
                         type: 'number',
-                        description: '固定数量(单位: 买入为SOL, 卖出为Token数量, 注意: 是每个钱包地址的挂单数量, 如果数量类型为fixed, 则必须要输入;需要先让用户选择数量类型)',
-                    },
-                    minRatio: {
-                        type: 'number',
-                        description: '范围比例最小值(单位: %, 如果数量类型为range, 则需要输入范围比例最小值和最大值;需要先让用户选择数量类型)',
-                    },
-                    maxRatio: {
-                        type: 'number',
-                        description: '范围比例最大值(单位: %, 如果数量类型为range, 则需要输入范围比例最小值和最大值;需要先让用户选择数量类型)',
-                    },
-                    minAmount: {
-                        type: 'number',
-                        description: '随机数量最小值(单位:  买入为SOL, 卖出为Token数量, 如果数量类型为random, 则需要输入随机数量最小值和最大值;需要先让用户选择数量类型)',
+                        description: '目标价格(单位: SOL)',
                     },
                     maxAmount: {
                         type: 'number',
-                        description: '随机数量最大值(单位:  买入为SOL, 卖出为Token数量, 如果数量类型为random, 则需要输入随机数量最小值和最大值;需要先让用户选择数量类型)',
+                        description: '交易总量(单位: 拉升为SOL, 砸盘为Token)',
+                    },
+                    minTradeAmount: {
+                        type: 'number',
+                        description: '最小单笔交易量(单位: 拉升为SOL, 砸盘为Token, 注意: 是每个钱包地址的最小单笔交易量)',
+                    },
+                    maxTradeAmount: {
+                        type: 'number',
+                        description: '最大单笔交易量(单位: 拉升为SOL, 砸盘为Token, 注意: 是每个钱包地址的最大单笔交易量)',
                     },
                     tradingType: {
                         type: 'string',
                         description: '交易类型',
                         enum: ['inside', 'outside'],
-                        // default: 'outside',
                     },
                     minInterval: {
                         type: 'number',
@@ -832,15 +770,15 @@ class StrategyMCPServer extends Server {
                     tipAmount: {
                         type: 'number',
                         description: '小费金额(单位: SOL)',
-                        default: 0.0001,
+                        default: config.strategy.defaultTipAmount,
                     },
                     slippageBps: {
                         type: 'number',
                         description: '滑点(单位: %)',
-                        default: 5,
+                        default: config.strategy.defaultSlippageBps,
                     },
                 },
-                required: ['tokenId', 'executeAt', 'walletIds', 'tradingType', 'side'],
+                required: ['tokenId', 'side', 'walletIds', 'targetPrice', 'maxAmount', 'minTradeAmount', 'maxTradeAmount', 'tradingType'],
             },
             handler: async args => {
                 try {
@@ -861,38 +799,29 @@ class StrategyMCPServer extends Server {
                     const validationArgs = {
                         ...args,
                     };
-                    Validator.validateTimeStrategyParams(validationArgs);
+                    Validator.validateMarketManipulationStrategyParams(validationArgs);
 
                     const tradingParams = {
                         side: args.side,
                         tradingType: args.tradingType,
-                        executeAt: dayjs(values.executeAt).toISOString(),
+                        targetPrice: args.targetPrice,
                         walletIds: args.walletIds,
+                        maxAmount: args.maxAmount,
+                        minTradeAmount: args.minTradeAmount,
+                        maxTradeAmount: args.maxTradeAmount,
                         minInterval: (args.minInterval || config.strategy.defaultInterval.min) * 1000,
                         maxInterval: (args.maxInterval || config.strategy.defaultInterval.max) * 1000,
                     };
 
-                    if (args.amountType === 'fixed') {
-                        tradingParams.amount = args.amount;
-                    } else if (args.amountType === 'range') {
-                        tradingParams.minRatio = args.minRatio;
-                        tradingParams.maxRatio = args.maxRatio;
-                    } else if (args.amountType === 'random') {
-                        tradingParams.minAmount = args.minAmount;
-                        tradingParams.maxAmount = args.maxAmount;
-                    }
-
-                    if (args.tipAmount) {
-                        tradingParams.tipAmount = args.tipAmount;
-                    }
+                    tradingParams.tipAmount = args.tipAmount || config.strategy.defaultTipAmount;
 
                     if (tradingParams.tradingType === 'outside' && args.slippageBps) {
                         tradingParams.slippageBps = args.slippageBps;
                     }
 
                     const strategyParams = {
-                        name: 'TIME_BASED',
-                        type: 'TIME_BASED',
+                        name: 'MARKET_MANIPULATION',
+                        type: 'MARKET_MANIPULATION',
                         tokenId: args.tokenId,
                         config: tradingParams,
                     };
@@ -939,8 +868,6 @@ class StrategyMCPServer extends Server {
         this.tools.set('createPortfolioExchangeStrategy', {
             description: `
             创建拆分策略订单,
-            交易方向,不需要用户输入, 从获取钱包列表的参数里获取;
-            策略执行时间,必须要大于当前时间+3分钟, 格式为: 2025-01-01 12:00:00;
             交易类型,不需要用户输入, 也不需要告诉用户交易类型, 根据Token列表里的poolType字段来判断, 如果poolType为pump, 则交易类型为inside, 如果poolType为pool, 则交易类型为outside;
             如果没有钱包ID,则提示用户先获取钱包列表;
             如果没有Token ID,则提示用户先获取Token列表;
@@ -953,49 +880,48 @@ class StrategyMCPServer extends Server {
                         type: 'string',
                         description: 'Token ID',
                     },
-                    side: {
-                        type: 'string',
-                        description: '交易方向',
-                        enum: ['buy', 'sell'],
-                        // default: 'buy',
-                    },
-                    executeAt: {
-                        type: 'string',
-                        description: '策略执行时间(格式: 2025-01-01 12:00:00)',
-                    },
-                    walletIds: {
+                    fromWalletIds: {
                         type: 'array',
                         items: {
                             type: 'string',
                         },
-                        description: '钱包ID列表',
+                        description: '拆分地址钱包ID列表',
                     },
-                    amountType: {
-                        type: 'string',
-                        description: '数量类型, fixed: 固定数量, range: 余额比例(1-100%), random: 随机数量; 需要先让用户选择数量类型',
-                        enum: ['fixed', 'range', 'random'],
-                        default: 'fixed',
+                    toWalletIds: {
+                        type: 'array',
+                        items: {
+                            type: 'string',
+                        },
+                        description: '拆分目标钱包ID列表',
                     },
-                    amount: {
+                    fromSplitAmount: {
                         type: 'number',
-                        description: '固定数量(单位: 买入为SOL, 卖出为Token数量, 注意: 是每个钱包地址的挂单数量, 如果数量类型为fixed, 则必须要输入;需要先让用户选择数量类型)',
+                        description: '拆分比例(1拆n，即一个被拆地址对应n个拆分后的地址)',
                     },
-                    minRatio: {
+                    // amountType: {
+                    //     type: 'string',
+                    //     description: '数量类型, range: 余额比例(1-100%)',
+                    //     enum: ['random'],
+                    //     default: 'range',
+                    // },
+                    fromAmountMinRatio: {
                         type: 'number',
-                        description: '范围比例最小值(单位: %, 如果数量类型为range, 则需要输入范围比例最小值和最大值;需要先让用户选择数量类型)',
+                        description: '最小拆分数量比例(每轮操作分散的token占被拆地址总量最小比例,单位: %)',
                     },
-                    maxRatio: {
+                    fromAmountMaxRatio: {
                         type: 'number',
-                        description: '范围比例最大值(单位: %, 如果数量类型为range, 则需要输入范围比例最小值和最大值;需要先让用户选择数量类型)',
+                        description: '最大拆分数量比例(每轮操作分散的token占被拆地址总量最大比例,单位: %)',
                     },
-                    minAmount: {
+
+                    minTradeAmount: {
                         type: 'number',
-                        description: '随机数量最小值(单位:  买入为SOL, 卖出为Token数量, 如果数量类型为random, 则需要输入随机数量最小值和最大值;需要先让用户选择数量类型)',
+                        description: '单笔拆分最小数量(单位: 当前的Token, 注意: 拆分地址的每笔子操作的需要满足的金额区间)',
                     },
-                    maxAmount: {
+                    maxTradeAmount: {
                         type: 'number',
-                        description: '随机数量最大值(单位:  买入为SOL, 卖出为Token数量, 如果数量类型为random, 则需要输入随机数量最小值和最大值;需要先让用户选择数量类型)',
+                        description: '单笔拆分最大数量(单位: 当前的Token, 注意: 拆分地址的每笔子操作的需要满足的金额区间)',
                     },
+
                     tradingType: {
                         type: 'string',
                         description: '交易类型',
@@ -1015,15 +941,15 @@ class StrategyMCPServer extends Server {
                     tipAmount: {
                         type: 'number',
                         description: '小费金额(单位: SOL)',
-                        default: 0.0001,
+                        default: config.strategy.defaultTipAmount,
                     },
                     slippageBps: {
                         type: 'number',
                         description: '滑点(单位: %)',
-                        default: 5,
+                        default: config.strategy.defaultSlippageBps,
                     },
                 },
-                required: ['tokenId', 'executeAt', 'walletIds', 'tradingType', 'side'],
+                required: ['tokenId', 'fromWalletIds', 'toWalletIds', 'fromSplitAmount', 'fromAmountMinRatio', 'fromAmountMaxRatio', 'minTradeAmount', 'maxTradeAmount', 'tradingType'],
             },
             handler: async args => {
                 try {
@@ -1044,38 +970,30 @@ class StrategyMCPServer extends Server {
                     const validationArgs = {
                         ...args,
                     };
-                    Validator.validateTimeStrategyParams(validationArgs);
+                    Validator.validatePortfolioExchangeStrategyParams(validationArgs);
 
                     const tradingParams = {
-                        side: args.side,
                         tradingType: args.tradingType,
-                        executeAt: dayjs(values.executeAt).toISOString(),
-                        walletIds: args.walletIds,
+                        fromWalletIds: args.fromWalletIds,
+                        toWalletIds: args.toWalletIds,
+                        fromSplitAmount: args.fromSplitAmount,
+                        fromAmountMinRatio: args.fromAmountMinRatio,
+                        fromAmountMaxRatio: args.fromAmountMaxRatio,
+                        minTradeAmount: args.minTradeAmount,
+                        maxTradeAmount: args.maxTradeAmount,
                         minInterval: (args.minInterval || config.strategy.defaultInterval.min) * 1000,
                         maxInterval: (args.maxInterval || config.strategy.defaultInterval.max) * 1000,
                     };
 
-                    if (args.amountType === 'fixed') {
-                        tradingParams.amount = args.amount;
-                    } else if (args.amountType === 'range') {
-                        tradingParams.minRatio = args.minRatio;
-                        tradingParams.maxRatio = args.maxRatio;
-                    } else if (args.amountType === 'random') {
-                        tradingParams.minAmount = args.minAmount;
-                        tradingParams.maxAmount = args.maxAmount;
-                    }
-
-                    if (args.tipAmount) {
-                        tradingParams.tipAmount = args.tipAmount;
-                    }
+                    tradingParams.tipAmount = args.tipAmount || config.strategy.defaultTipAmount;
 
                     if (tradingParams.tradingType === 'outside' && args.slippageBps) {
                         tradingParams.slippageBps = args.slippageBps;
                     }
 
                     const strategyParams = {
-                        name: 'TIME_BASED',
-                        type: 'TIME_BASED',
+                        name: 'PORTFOLIO_EXCHANGE',
+                        type: 'PORTFOLIO_EXCHANGE',
                         tokenId: args.tokenId,
                         config: tradingParams,
                     };
@@ -1181,12 +1099,12 @@ class StrategyMCPServer extends Server {
                     tipAmount: {
                         type: 'number',
                         description: '小费金额(单位: SOL)',
-                        default: 0.0001,
+                        default: config.strategy.defaultTipAmount,
                     },
                     slippageBps: {
                         type: 'number',
                         description: '滑点(单位: %)',
-                        default: 5,
+                        default: config.strategy.defaultSlippageBps,
                     },
                 },
                 required: ['tokenId', 'tradingType', 'buyWalletId', 'sellWalletId', 'maxCycles', 'minTradeAmount', 'maxTradeAmount'],
@@ -1225,9 +1143,7 @@ class StrategyMCPServer extends Server {
 
                     if (args.executeAt) tradingParams.executeAt = dayjs(args.executeAt).toISOString();
 
-                    if (args.tipAmount) {
-                        tradingParams.tipAmount = args.tipAmount;
-                    }
+                    tradingParams.tipAmount = args.tipAmount || config.strategy.defaultTipAmount;
 
                     if (tradingParams.tradingType === 'outside' && args.slippageBps) {
                         tradingParams.slippageBps = args.slippageBps;
