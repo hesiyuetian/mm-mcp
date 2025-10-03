@@ -92,6 +92,14 @@ class Validator {
         return true;
     }
 
+    // 验证池子类型
+    static validatePoolType(poolType) {
+        const validTypes = ['AMM_V4', 'CLMM', 'CPMM'];
+        if (!validTypes.includes(poolType)) {
+            throw new Error('池子类型必须是 AMM_V4、CLMM 或 CPMM');
+        }
+    }
+
     // 验证钱包ID列表
     static validateWalletIds(walletIds) {
         if (!Array.isArray(walletIds) || walletIds.length === 0) {
@@ -404,6 +412,65 @@ class Validator {
         }
 
         return true;
+    }
+
+    // 验证Raydium狙击策略参数
+    static validateRaydiumSniperStrategyParams(params) {
+        this.validateTokenId(params.tokenId);
+        this.validatePoolType(params.poolType);
+        this.validateAmountType(params.amountType);
+
+        if (!params.buyerWalletId || typeof params.buyerWalletId !== 'string') {
+            throw new Error('狙击账号不能为空');
+        }
+
+        // 验证数量相关参数
+        if (params.amountType === 'fixed') {
+            this.validateAmount(params.amount);
+        } else if (params.amountType === 'range') {
+            this.validateRatio(params.minRatio);
+            this.validateRatio(params.maxRatio);
+            if (params.minRatio >= params.maxRatio) {
+                throw new Error('最小比例必须小于最大比例');
+            }
+        } else if (params.amountType === 'random') {
+            this.validateAmount(params.minAmount);
+            this.validateAmount(params.maxAmount);
+            if (params.minAmount >= params.maxAmount) {
+                throw new Error('最小数量必须小于最大数量');
+            }
+        }
+    }
+
+    // 验证PumpSwap狙击策略参数
+    static validatePumpSwapSniperStrategyParams(params) {
+        // 验证必需参数
+        this.validateTokenId(params.tokenId);
+        this.validateAmountType(params.amountType);
+
+        if (!params.onlySniperBuy && (!params.migratorWalletId || typeof params.migratorWalletId !== 'string')) {
+            throw new Error('发射账号不能为空');
+        }
+        if (!params.buyerWalletId || typeof params.buyerWalletId !== 'string') {
+            throw new Error('狙击账号不能为空');
+        }
+
+        // 验证数量相关参数
+        if (params.amountType === 'fixed') {
+            this.validateAmount(params.amount);
+        } else if (params.amountType === 'range') {
+            this.validateRatio(params.minRatio);
+            this.validateRatio(params.maxRatio);
+            if (params.minRatio >= params.maxRatio) {
+                throw new Error('最小比例必须小于最大比例');
+            }
+        } else if (params.amountType === 'random') {
+            this.validateAmount(params.minAmount);
+            this.validateAmount(params.maxAmount);
+            if (params.minAmount >= params.maxAmount) {
+                throw new Error('最小数量必须小于最大数量');
+            }
+        }
     }
 
     // 验证登录参数

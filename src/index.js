@@ -72,13 +72,17 @@ class StrategyMCPServer extends Server {
             - 拉砸策略(MARKET_MANIPULATION)：拉升或砸盘操作
             - 拆分策略(PORTFOLIO_EXCHANGE)：在不同钱包间转移资产
             - 刷量策略(BUNDLE_SWAP)：在两个钱包间进行循环交易
+            - Raydium狙击策略(RAYDIUM_SNIPER)：狙击raydium上的加池
+            - PumpSwap狙击(PUMP_MIGRATE): 狙击PumpSwap上的外盘发射,只有当前Token是内盘才可以狙击
         *   **交易方向判断**：
             - 限价策略、定时策略、拉砸策略需要用户选择交易方向(buy/sell)
             - 拆分策略、刷量策略默认为sell方向
+            - Raydium狙击策略、PumpSwap狙击策略不需要交易方向, 默认为buy方向
         *   **钱包选择限制**：
             - 限价、定时、拉砸策略：可选择多个钱包
             - 拆分策略：需要选择拆分地址和目标地址，不能有交集 
             - 刷量策略：只能选择一个买入钱包和一个卖出钱包，且不能相同 
+            - Raydium狙击策略、PumpSwap狙击策略只能选择一个钱包
         请根据上述指引选择接口。
         `,
             },
@@ -242,12 +246,17 @@ class StrategyMCPServer extends Server {
             不同策略对应的交易方向判断规则:
             1:限价策略(PRICE_BASED)、定时策略(TIME_BASED),则必须要先引导用户选择交易方向,buy或者sell, 先选择交易方向,再返回钱包列表;
             2:拉砸策略(MARKET_MANIPULATION),则必须要先引导用户选择交易方向,拉升或者砸盘, (拉升为buy, 砸盘为sell), 先选择交易方向,再返回钱包列表;
-            3:其他策略不需要选择交易方向,也不需要提示给用户, 都设置为sell;
+            3:Raydium狙击策略(RAYDIUM_SNIPER),PumpSwap狙击策略(PUMP_MIGRATE),不需要选择交易方向,也不需要提示给用户, 默认设置为buy;
+            4:刷量策略、拆分策略,不需要选择交易方向,也不需要提示给用户, 默认设置为sell;
+            5:PumpSwap狙击策略, 需要用户选择是否仅狙击买入, 如果选择 "是否仅狙击买入", 如果选择为否, 则需要用户选择发射账号, 否则不需要用户选择发射账号;
 
             选择钱包限制:
             1: 限价策略、定时策略、拉砸策略, 可以选择一个或者多个钱包来创建策略;
             2: 拆分策略, 用户需要选择拆分地址和目标地址,都可以选择一个或者多个钱包,但是拆分地址和目标地址不能有交集;
             3: 刷量策略, 用户需要选择买入地址和卖出地址,只能选择一个钱包地址, 买入地址和卖出地址不能相同;
+            4: Raydium狙击策略, 只能选择一个钱包地址狙击;
+            5: PumpSwap狙击策略, 如果选择 "是否仅狙击买入", 如果选择为否, 则需要用户选择发射账号, 否则不需要用户选择发射账号;发射账号和狙击账号不能相同;
+
 
             获取指定Token的钱包列表,只需要返回钱包地址、SOL余额、当前Token的余额、别名(name)和对应的钱包组 (钱包组为 列表里的type和tag字段,拼接方式: type-tag), 然后引导创建对应的策略; 
             提示用户如果交易方向为买入, 则需要购买的钱包地址有SOL余额, 如果交易方向为卖出, 则需要卖出的钱包地址有当前Token余额和SOl余额;
@@ -266,7 +275,7 @@ class StrategyMCPServer extends Server {
                     strategyType: {
                         type: 'string',
                         description: '策略类型',
-                        enum: ['PRICE_BASED', 'TIME_BASED', 'MARKET_MANIPULATION', 'PORTFOLIO_EXCHANGE', 'BUNDLE_SWAP'],
+                        enum: ['PRICE_BASED', 'TIME_BASED', 'MARKET_MANIPULATION', 'PORTFOLIO_EXCHANGE', 'BUNDLE_SWAP', 'PUMP_MIGRATE', 'RAYDIUM_SNIPER'],
                     },
                     side: {
                         type: 'string',
@@ -1157,6 +1166,323 @@ class StrategyMCPServer extends Server {
                     };
 
                     console.log('bundle swap strategyParams ==============', strategyParams);
+
+                    const response = await this.apiClient.createStrategy(strategyParams);
+
+                    if (response.success) {
+                        return {
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: config.messages.strategy.bundleSwapSuccess,
+                                },
+                                {
+                                    type: 'text',
+                                    text: `策略参数: ${JSON.stringify(strategyParams, null, 2)}`,
+                                },
+                            ],
+                        };
+                    } else {
+                        return {
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: response.message || config.messages.strategy.bundleSwapFailed,
+                                },
+                            ],
+                        };
+                    }
+                } catch (error) {
+                    return {
+                        content: [
+                            {
+                                type: 'text',
+                                text: error.message || config.messages.strategy.bundleSwapFailed,
+                            },
+                        ],
+                    };
+                }
+            },
+        });
+
+        // 注册PumpSwap狙击策略
+        this.tools.set('createPumpSniperStrategy', {
+            description: `
+            创建PumpSwap狙击策略订单;
+            需要用户优先选择 "是否仅狙击买入" (狙击买入模式下,发射地址不生效);
+            发射账号, 如果选择 "是仅狙击买入", 则不需要用户选择发射账号, 否则需要用户选择发射账号;
+
+            只有当前Token是内盘的时候才可以狙击,否则提示用户当前Token是外盘,不能狙击;
+            如果没有钱包ID,则提示用户先获取钱包列表;
+            如果没有Token ID,则提示用户先获取Token列表;
+            如果没有项目ID,则提示用户先获取项目列表;
+            `,
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    tokenId: {
+                        type: 'string',
+                        description: 'Token ID',
+                    },
+                    onlySniperBuy: {
+                        type: 'boolean',
+                        description: '是否仅狙击买入',
+                        enum: [true, false],
+                    },
+
+                    migratorWalletId: {
+                        type: 'string',
+                        description: '发射账号',
+                    },
+                    buyerWalletId: {
+                        type: 'string',
+                        description: '狙击账号',
+                    },
+
+                    amountType: {
+                        type: 'string',
+                        description: '数量类型, fixed: 固定数量, range: 余额比例(1-100%), random: 随机数量; 需要先让用户选择数量类型',
+                        enum: ['fixed', 'range', 'random'],
+                        default: 'fixed',
+                    },
+                    amount: {
+                        type: 'number',
+                        description: '固定数量(单位: 买入为SOL, 如果数量类型为fixed, 则必须要输入;需要先让用户选择数量类型)',
+                    },
+                    minRatio: {
+                        type: 'number',
+                        description: '范围比例最小值(单位: %, 如果数量类型为range, 则需要输入范围比例最小值和最大值;需要先让用户选择数量类型)',
+                    },
+                    maxRatio: {
+                        type: 'number',
+                        description: '范围比例最大值(单位: %, 如果数量类型为range, 则需要输入范围比例最小值和最大值;需要先让用户选择数量类型)',
+                    },
+                    minAmount: {
+                        type: 'number',
+                        description: '随机数量最小值(单位:  SOL, 如果数量类型为random, 则需要输入随机数量最小值和最大值;需要先让用户选择数量类型)',
+                    },
+                    maxAmount: {
+                        type: 'number',
+                        description: '随机数量最大值(单位:  买入为SOL, 如果数量类型为random, 则需要输入随机数量最小值和最大值;需要先让用户选择数量类型)',
+                    },
+                    tipAmount: {
+                        type: 'number',
+                        description: '小费金额(单位: SOL)',
+                        default: config.strategy.defaultTipAmount,
+                    },
+                    slippageBps: {
+                        type: 'number',
+                        description: '滑点(单位: %)',
+                        default: config.strategy.defaultSlippageBps,
+                    },
+                },
+                required: ['tokenId', 'onlySniperBuy', 'buyerWalletId', 'amountType'],
+            },
+            handler: async args => {
+                try {
+                    if (!this.token) {
+                        return {
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: config.messages.login.required,
+                                },
+                            ],
+                        };
+                    }
+
+                    // console.log('handler createStrategy args ==============', args);
+
+                    // 验证策略参数
+                    const validationArgs = {
+                        ...args,
+                    };
+                    Validator.validatePumpSwapSniperStrategyParams(validationArgs);
+
+                    const tradingParams = {
+                        migratorWalletId: args.migratorWalletId,
+                        buyerWalletId: args.buyerWalletId,
+                    };
+
+                    if (args.amountType === 'fixed') {
+                        tradingParams.amount = args.amount;
+                    } else if (args.amountType === 'range') {
+                        tradingParams.minRatio = args.minRatio;
+                        tradingParams.maxRatio = args.maxRatio;
+                    } else if (args.amountType === 'random') {
+                        tradingParams.minAmount = args.minAmount;
+                        tradingParams.maxAmount = args.maxAmount;
+                    }
+
+                    tradingParams.tipAmount = args.tipAmount || config.strategy.defaultTipAmount;
+
+                    if (tradingParams.tradingType === 'outside' && args.slippageBps) {
+                        tradingParams.slippageBps = args.slippageBps;
+                    }
+
+                    const strategyParams = {
+                        name: 'PUMP_MIGRATE',
+                        type: 'PUMP_MIGRATE',
+                        tokenId: args.tokenId,
+                        config: tradingParams,
+                    };
+
+                    console.log('pump sniper strategyParams ==============', strategyParams);
+
+                    const response = await this.apiClient.createStrategy(strategyParams);
+
+                    if (response.success) {
+                        return {
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: config.messages.strategy.bundleSwapSuccess,
+                                },
+                                {
+                                    type: 'text',
+                                    text: `策略参数: ${JSON.stringify(strategyParams, null, 2)}`,
+                                },
+                            ],
+                        };
+                    } else {
+                        return {
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: response.message || config.messages.strategy.bundleSwapFailed,
+                                },
+                            ],
+                        };
+                    }
+                } catch (error) {
+                    return {
+                        content: [
+                            {
+                                type: 'text',
+                                text: error.message || config.messages.strategy.bundleSwapFailed,
+                            },
+                        ],
+                    };
+                }
+            },
+        });
+
+        // 注册Raydium狙击策略
+        this.tools.set('createRaydiumSniperStrategy', {
+            description: `
+            创建Raydium狙击策略订单;
+            池子类型,需要用户自己来选择;
+            如果没有钱包ID,则提示用户先获取钱包列表;
+            如果没有Token ID,则提示用户先获取Token列表;
+            如果没有项目ID,则提示用户先获取项目列表;
+            `,
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    tokenId: {
+                        type: 'string',
+                        description: 'Token ID',
+                    },
+                    poolType: {
+                        type: 'string',
+                        description: '池子类型',
+                        enum: ['AMM_V4', 'CLMM', 'CPMM'],
+                    },
+
+                    buyerWalletId: {
+                        type: 'string',
+                        description: '狙击账号',
+                    },
+
+                    amountType: {
+                        type: 'string',
+                        description: '数量类型, fixed: 固定数量, range: 余额比例(1-100%), random: 随机数量; 需要先让用户选择数量类型',
+                        enum: ['fixed', 'range', 'random'],
+                        default: 'fixed',
+                    },
+                    amount: {
+                        type: 'number',
+                        description: '固定数量(单位: 买入为SOL, 如果数量类型为fixed, 则必须要输入;需要先让用户选择数量类型)',
+                    },
+                    minRatio: {
+                        type: 'number',
+                        description: '范围比例最小值(单位: %, 如果数量类型为range, 则需要输入范围比例最小值和最大值;需要先让用户选择数量类型)',
+                    },
+                    maxRatio: {
+                        type: 'number',
+                        description: '范围比例最大值(单位: %, 如果数量类型为range, 则需要输入范围比例最小值和最大值;需要先让用户选择数量类型)',
+                    },
+                    minAmount: {
+                        type: 'number',
+                        description: '随机数量最小值(单位:  SOL, 如果数量类型为random, 则需要输入随机数量最小值和最大值;需要先让用户选择数量类型)',
+                    },
+                    maxAmount: {
+                        type: 'number',
+                        description: '随机数量最大值(单位:  买入为SOL, 如果数量类型为random, 则需要输入随机数量最小值和最大值;需要先让用户选择数量类型)',
+                    },
+                    tipAmount: {
+                        type: 'number',
+                        description: '小费金额(单位: SOL)',
+                        default: config.strategy.defaultTipAmount,
+                    },
+                    slippageBps: {
+                        type: 'number',
+                        description: '滑点(单位: %)',
+                        default: config.strategy.defaultSlippageBps,
+                    },
+                },
+                required: ['tokenId', 'poolType', 'buyerWalletId', 'amountType'],
+            },
+            handler: async args => {
+                try {
+                    if (!this.token) {
+                        return {
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: config.messages.login.required,
+                                },
+                            ],
+                        };
+                    }
+
+                    // console.log('handler createStrategy args ==============', args);
+
+                    // 验证策略参数
+                    const validationArgs = {
+                        ...args,
+                    };
+                    Validator.validateRaydiumSniperStrategyParams(validationArgs);
+
+                    const tradingParams = {
+                        buyerWalletId: args.buyerWalletId,
+                        poolType: args.poolType,
+                    };
+
+                    if (args.amountType === 'fixed') {
+                        tradingParams.amount = args.amount;
+                    } else if (args.amountType === 'range') {
+                        tradingParams.minRatio = args.minRatio;
+                        tradingParams.maxRatio = args.maxRatio;
+                    } else if (args.amountType === 'random') {
+                        tradingParams.minAmount = args.minAmount;
+                        tradingParams.maxAmount = args.maxAmount;
+                    }
+
+                    tradingParams.tipAmount = args.tipAmount || config.strategy.defaultTipAmount;
+
+                    if (tradingParams.tradingType === 'outside' && args.slippageBps) {
+                        tradingParams.slippageBps = args.slippageBps;
+                    }
+
+                    const strategyParams = {
+                        name: 'RAYDIUM_SNIPER',
+                        type: 'RAYDIUM_SNIPER',
+                        tokenId: args.tokenId,
+                        config: tradingParams,
+                    };
+
+                    console.log('raydium sniper strategyParams ==============', strategyParams);
 
                     const response = await this.apiClient.createStrategy(strategyParams);
 
