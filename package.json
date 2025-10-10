@@ -9,7 +9,13 @@
   },
   "scripts": {
     "start": "node src/index.js",
+    "start:sse": "SERVER_MODE=sse node src/index.js",
+    "start:multi-mode": "SERVER_MODE=multi-mode node src/index.js",
+    "start:streamable-http": "SERVER_MODE=streamable-http node src/index.js",
     "dev": "nodemon src/index.js",
+    "dev:sse": "SERVER_MODE=sse nodemon src/index.js",
+    "dev:multi-mode": "SERVER_MODE=multi-mode nodemon src/index.js",
+    "dev:streamable-http": "SERVER_MODE=streamable-http nodemon src/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

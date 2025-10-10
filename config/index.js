@@ -1,4 +1,6 @@
 // MCP 限价策略服务配置文件
+import dotenv from 'dotenv';
+dotenv.config();
 
 const config = {
     env: process.env.NODE_ENV,
@@ -17,6 +19,9 @@ const config = {
         token: process.env.TOKEN || '',
         retries: 3,
     },
+
+    // 端口配置
+    port: process.env.PORT || 3010,
 
     // 日志配置
     logging: {

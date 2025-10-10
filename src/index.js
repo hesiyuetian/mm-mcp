@@ -255,7 +255,7 @@ class StrategyMCPServer extends Server {
             2: 拆分策略, 用户需要选择拆分地址和目标地址,都可以选择一个或者多个钱包,但是拆分地址和目标地址不能有交集;
             3: 刷量策略, 用户需要选择买入地址和卖出地址,只能选择一个钱包地址, 买入地址和卖出地址不能相同;
             4: Raydium狙击策略, 只能选择一个钱包地址狙击;
-            5: PumpSwap狙击策略, 如果选择 "是否仅狙击买入", 如果选择为否, 则需要用户选择发射账号, 否则不需要用户选择发射账号;发射账号和狙击账号不能相同;
+            5: PumpSwap狙击策略, 如果选择 "是否仅狙击买入", 如果选择为否, 则需要用户选择发射账号, 否则不需要用户选择发射账号;发射账号和狙击账号不能相同, 狙击地址和发射账号只能选择一个钱包地址;
 
 
             获取指定Token的钱包列表,只需要返回钱包地址、SOL余额、当前Token的余额、别名(name)和对应的钱包组 (钱包组为 列表里的type和tag字段,拼接方式: type-tag), 然后引导创建对应的策略; 
@@ -1300,9 +1300,13 @@ class StrategyMCPServer extends Server {
                     Validator.validatePumpSwapSniperStrategyParams(validationArgs);
 
                     const tradingParams = {
-                        migratorWalletId: args.migratorWalletId,
                         buyerWalletId: args.buyerWalletId,
+                        onlySniper: args.onlySniperBuy,
                     };
+
+                    if (!args.onlySniperBuy) {
+                        tradingParams.migratorWalletId = args.migratorWalletId;
+                    }
 
                     if (args.amountType === 'fixed') {
                         tradingParams.amount = args.amount;
@@ -1597,8 +1601,26 @@ class StrategyMCPServer extends Server {
 
 // 启动服务器
 async function main() {
+    const serverMode = process.env.SERVER_MODE || 'stdio';
+    Logger.info(`启动MM MCP服务器 - 模式: ${serverMode}`);
+
+    if (serverMode === 'stdio') {
+        // stdio模式
+        await startStdioServer();
+    } else if (serverMode === 'sse' || serverMode === 'streamable-http' || serverMode === 'multi-mode') {
+        // HTTP模式 - 导入并启动HTTP服务器
+        const { startHttpServer } = await import('./server.js');
+        await startHttpServer();
+    } else {
+        Logger.error(`不支持的服务器模式: ${serverMode}`);
+        Logger.error('支持的模式: stdio, sse, streamable-http, multi-mode');
+        process.exit(1);
+    }
+}
+
+async function startStdioServer() {
     try {
-        Logger.info('MCP服务器启动开始');
+        Logger.info('MCP服务器启动开始 (stdio模式)');
 
         const server = new StrategyMCPServer();
         const transport = new StdioServerTransport();
@@ -1607,7 +1629,7 @@ async function main() {
         await server.connect(transport);
 
         Logger.info('MCP服务器启动完成，等待请求...');
-        process.stderr.write('Price Strategy MCP Server started successfully\n');
+        process.stderr.write('MM Strategy MCP Server started successfully (stdio mode)\n');
     } catch (error) {
         Logger.error('MCP服务器启动失败', { error: error.message, stack: error.stack });
         process.stderr.write(`MCP Server failed to start: ${error.message}\n`);
