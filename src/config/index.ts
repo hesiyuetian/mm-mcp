@@ -15,7 +15,7 @@ const config = {
     // API配置
     api: {
         baseUrl: process.env.API_BASE_URL || 'http://localhost:3000',
-        timeout: parseInt(process.env.REQUEST_TIMEOUT) || 30000,
+        timeout: parseInt(process.env.REQUEST_TIMEOUT || '30000'),
         token: process.env.TOKEN || '',
         retries: 3,
     },

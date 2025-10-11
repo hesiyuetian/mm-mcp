@@ -1,9 +1,14 @@
 // API工具类
 
 import axios from 'axios';
-import config from '../config/index.js';
+import config from '../config/index';
 
 class ApiClient {
+    baseUrl: string;
+    timeout: number;
+    retries: number;
+    token: string;
+
     constructor() {
         this.baseUrl = config.api.baseUrl;
         this.timeout = config.api.timeout;
@@ -28,7 +33,7 @@ class ApiClient {
     }
 
     // 带重试的请求方法
-    async request(method, url, data = null, params = null) {
+    async request(method, url, data: any = null, params: any = null) {
         let lastError;
 
         for (let i = 0; i <= this.retries; i++) {

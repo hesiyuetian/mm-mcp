@@ -1,6 +1,6 @@
 // 验证工具类
 
-import config from '../config/index.js';
+import config from '../config/index';
 
 class Validator {
     // 验证邮箱格式

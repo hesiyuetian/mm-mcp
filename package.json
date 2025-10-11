@@ -1,28 +1,29 @@
 {
   "name": "mm-mcp-strategy-server",
   "version": "1.0.13",
-  "description": "MCP服务 - 限价策略交易",
+  "description": "MCP服务 - 策略交易",
   "type": "module",
-  "main": "mcp-price-strategy-server.js",
+  "main": "build/index.js",
   "bin": {
-    "mcp-price-strategy": "./mcp-price-strategy-server.js"
+    "mcp-price-strategy": "./build/index.js"
   },
   "scripts": {
-    "start": "node src/index.js",
-    "start:sse": "SERVER_MODE=sse node src/index.js",
-    "start:multi-mode": "SERVER_MODE=multi-mode node src/index.js",
-    "start:streamable-http": "SERVER_MODE=streamable-http node src/index.js",
-    "dev": "nodemon src/index.js",
-    "dev:sse": "SERVER_MODE=sse nodemon src/index.js",
-    "dev:multi-mode": "SERVER_MODE=multi-mode nodemon src/index.js",
-    "dev:streamable-http": "SERVER_MODE=streamable-http nodemon src/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:simple": "node test/simple-test.js",
     "test:manual": "node test/manual-test.js",
     "test:diagnostic": "node test/diagnostic-test.js",
-    "test:detailed": "node test/detailed-diagnostic-test.js"
+    "test:detailed": "node test/detailed-diagnostic-test.js",
+    "build": "tsc",
+    "start": "node build/index.js",
+    "start:sse": "SERVER_MODE=sse node build/index.js",
+    "start:multi-mode": "SERVER_MODE=multi-mode node build/index.js",
+    "start:streamable-http": "SERVER_MODE=streamable-http node build/index.js",
+    "dev": "tsx src/index.ts",
+    "dev:sse": "SERVER_MODE=sse tsx src/index.ts",
+    "dev:multi-mode": "SERVER_MODE=multi-mode tsx src/index.ts",
+    "dev:streamable-http": "SERVER_MODE=streamable-http tsx src/index.ts"
   },
   "repository": {
     "type": "git",
@@ -45,7 +46,9 @@
     "axios": "^1.6.0",
     "dayjs": "^1.11.18",
     "dotenv": "^17.2.2",
-    "jest": "^30.1.2"
+    "jest": "^30.1.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.0"
